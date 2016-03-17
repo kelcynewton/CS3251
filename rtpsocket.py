@@ -138,26 +138,6 @@ class Rtpsocket():
 			self.connections[(host, port)].connected = True
 			return self.connections[(host, port)]
 
-	def send_s(self, connect, data):
-		connectionHost = connect.destIP
-		connectionPort = connect.destPort
-
-		if isinstance(self.connections[(str(connectionHost), connectionPort)], connection.Connection):
-			print "Valid connection"
-			self.connections[(str(connectionHost), connectionPort)].seqNum += 1
-		
-		data_packet = self.create_data_packet(connectionHost, connectionPort, data)
-		connect.sndBuff.appendleft(data_packet)
-		sending = threading.Thread(target=self.sendThread)
-		sending.start()
-
-	def sendThread(self):
-		for address, connect in self.connections.items():
-			if len(connect.sndBuff) > 0 and connect.connected:
-				data_packet = connect.sndBuff.pop()
-				self.udpSocket.sendto(packet.packet_to_bytes(data_packet), address)
-				print "attempting to send data packet containing: " + str(data_packet.contents)
-
 	def recv(self):
 		data, address = self.udpSocket.recvfrom(1024)
 		dest_IP = address[0]

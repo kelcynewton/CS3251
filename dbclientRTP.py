@@ -16,8 +16,8 @@ if len(sys.argv) > 2:					#make sure query is actually entered
 else:
 	print "Please enter a valid query"
 
-s.connect(host, port)
-s.send_s(s.connections[(host, port)], str(query))
+c = s.connect(host, port)
+c.send_s(str(query))
 
 gotresponse = False
 
@@ -27,4 +27,5 @@ while(not gotresponse):
 		gotresponse = True
 		print response
 
+s.close()
 sys.exit(1)

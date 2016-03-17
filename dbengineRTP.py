@@ -28,13 +28,10 @@ findConnection = False
 
 while(not findConnection):
 	c = s.accept()
-	if c in s.connections.values():
-		print "it's here too"
 	if isinstance(c, connection.Connection):
 		findConnection = True
 		query = c.recv()
 		print query
-
 
 		qlength, query = query.split("+") #get length of query and query
 
@@ -59,11 +56,7 @@ while(not findConnection):
 				validq += 1
 			if validq != 0 and validq == (int(qlength) - 1): #check if attempted query is valid, any typo will fail this condition
 				print response
-				destIP = c.destIP
-				destPort = c.destPort
-				if isinstance(c, connection.Connection):
-					print "It's a fucking connection"
-				s.send_s(c, response)
+				c.send_s(response)
 	time.sleep(1)
 
 print "done"

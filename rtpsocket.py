@@ -46,7 +46,7 @@ class Rtpsocket():
 				# IP address & port that hasn't been seen is trying to SYN, need to send synack & create new connection object
 				if pkt_type == 1 and address not in self.connections.keys():
 					print "SYN received!"
-					newConnection = connection.Connection(self.port, dest_port, dest_IP, 0, pkt_seqNum, "nothing") #new connection with client that sent SYN
+					newConnection = connection.Connection(self.port, dest_port, dest_IP, 0, pkt_seqNum, "nothing", self) #new connection with client that sent SYN
 					print newConnection
 					if isinstance(newConnection, connection.Connection):
 						print "Adding new connection to the table"
@@ -66,6 +66,13 @@ class Rtpsocket():
 					#not putting entire packet in receive, only the data because it wasn't working otherwise
 					self.connections[address].rcvBuff.appendleft(pkt_data)
 					print "Data packet placed in appropriate receive buffer, data: " + pkt_data + ", address: " + str(address)
+
+				if pkt_type == 8 and address in self.connections.keys():
+					print "FIN Received From: " + str(address)
+					self.connections[address].finReceived = True #set the fin received in connection to true
+					self.closingConnections.appendleft(self.connections[address]) #add connection that wants to fin to queue of closing connections
+					self.udpSocket.sendto
+
 
 
 	def bind(self, host, port):
@@ -91,7 +98,7 @@ class Rtpsocket():
 
 	def connect(self, host, port):
 		#create new connection object
-		newConnection = connection.Connection(self.port, port, host, 0, 0, "Nothing yet") #data is literally nothing yet, seqnum and acknum 0
+		newConnection = connection.Connection(self.port, port, host, 0, 0, "Nothing yet", self) #data is literally nothing yet, seqnum and acknum 0
 		
 		self.connections[(host, port)] = newConnection #add new connection to connection dictionary
 
@@ -129,39 +136,25 @@ class Rtpsocket():
 			ack_packet = self.create_ack(host, port)
 			self.udpSocket.sendto(packet.packet_to_bytes(ack_packet), (host, port))
 			self.connections[(host, port)].connected = True
+			return self.connections[(host, port)]
 
 	def send_s(self, connect, data):
 		connectionHost = connect.destIP
 		connectionPort = connect.destPort
-		connectionSeq = connect.seqNum
-		isconnected = connect.connected
-		print str(connectionHost)
-		print str(connectionPort)
-		print str(connectionSeq)
-		print str(isconnected)
-
-		print type(connect)
-
-		isValid = False
-
-		if ((str(connectionHost), connectionPort) in self.connections.keys()):
-			print "keys match"
-			print len(self.connections.values())
 
 		if isinstance(self.connections[(str(connectionHost), connectionPort)], connection.Connection):
 			print "Valid connection"
-			isValid = True
 			self.connections[(str(connectionHost), connectionPort)].seqNum += 1
 		
 		data_packet = self.create_data_packet(connectionHost, connectionPort, data)
-		connect.sndBuff.put(data_packet)
+		connect.sndBuff.appendleft(data_packet)
 		sending = threading.Thread(target=self.sendThread)
 		sending.start()
 
 	def sendThread(self):
 		for address, connect in self.connections.items():
-			if not connect.sndBuff.empty() and connect.connected:
-				data_packet = connect.sndBuff.get()
+			if len(connect.sndBuff) > 0 and connect.connected:
+				data_packet = connect.sndBuff.pop()
 				self.udpSocket.sendto(packet.packet_to_bytes(data_packet), address)
 				print "attempting to send data packet containing: " + str(data_packet.contents)
 
@@ -178,11 +171,11 @@ class Rtpsocket():
 				return pkt_data
 
 
-	# def close(self):
-	# 	for connect in self.connections.values():
-	# 		fin = create_fin_packet(connect.destIP, connect.destPort)
-	# 		self.udpSocket.sendto(packet.packet_to_bytes(fin), (connect.destIP, connect.destPort))
-
+	def close(self):
+		for connect in self.connections.values():
+			fin = self.create_fin_packet(connect.destIP, connect.destPort)
+			self.udpSocket.sendto(packet.packet_to_bytes(fin), (connect.destIP, connect.destPort))
+		self.connections.clear()
 
 	def create_syn_packet(self, host, port):
 		# create SYN packet for part 1 of handshake, type is set to 1, use connection table to get seqnum, acknum, window size, no data yet

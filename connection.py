@@ -1,6 +1,6 @@
 import packet
-import Queue
 import time
+import rtpsocket
 from collections import deque
 
 # Packet types:
@@ -10,7 +10,7 @@ from collections import deque
 # FIN = 8
 
 class Connection():
-    def __init__(self, sourcePort, destPort, destIP, seqNum, ackNum, data):
+    def __init__(self, sourcePort, destPort, destIP, seqNum, ackNum, data, rtpsocket):
         self.src = sourcePort
         self.destPort = destPort
         self.destIP = destIP
@@ -19,9 +19,10 @@ class Connection():
         self.ackNum = ackNum
         self.data = data
         self.rcvBuff = deque()
-        self.sndBuff = Queue.Queue()
+        self.sndBuff = deque()
         self.connected = False
-
+        self.finReceived = False
+        self.rtpsocket = rtpsocket
 
 
     def recv(self):
@@ -30,12 +31,14 @@ class Connection():
             pkt_data = self.rcvBuff.pop()
             return pkt_data
 
+    def send_s(self, data):
+        address = (self.destIP, self.destPort)
+        data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data)
+        self.sndBuff.appendleft(data_packet)
+        if len(self.sndBuff) > 0 and self.connected:
+                data_packet = self.sndBuff.pop()
+                self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), address)
+
 #later add in dynamic receiver window, for now window is 1 packet
-
-
-
-
-
-
 
 

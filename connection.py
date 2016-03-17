@@ -71,11 +71,14 @@ class Connection():
 
     def send_s(self, data):
         address = (self.destIP, self.destPort)
+        self.seqNum += 1
         data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data)
         self.sndBuff.appendleft(data_packet)
         if len(self.sndBuff) > 0 and self.connected:
                 data_packet = self.sndBuff.pop()
                 self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), address)
+                print "Sending data..."
+                print "Seqnum: " + str(self.seqNum)
 
     def close(self):
         print "closingConnections len: " + str(len(self.rtpsocket.closingConnections))

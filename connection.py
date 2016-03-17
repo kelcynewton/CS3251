@@ -30,7 +30,6 @@ class Connection():
         self.rtpsocket = rtpsocket
         self.timeout = False
 
-
     def recv(self):
         time.sleep(1)
         if len(self.rcvBuff) > 0:
@@ -70,11 +69,6 @@ class Connection():
     def timeout_conn(self):
         self.timeout = True
 
-
-
-
-
-
     def send_s(self, data):
         address = (self.destIP, self.destPort)
         data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data)
@@ -83,4 +77,10 @@ class Connection():
                 data_packet = self.sndBuff.pop()
                 self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), address)
 
+    def close(self):
+        print "closingConnections len: " + str(len(self.rtpsocket.closingConnections))
+        if self in self.rtpsocket.closingConnections:
+            self.rtpsocket.closingConnections.pop()
+            print "closingConnections len after pop: " + str(len(self.rtpsocket.closingConnections))
+            self.rtpsocket.clearConnection(self)
 #later add in dynamic receiver window, for now window is 1 packet

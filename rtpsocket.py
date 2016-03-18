@@ -14,7 +14,7 @@ import time
 # DATA = 4
 # FIN = 8
 
-class Rtpsocket():	
+class Rtpsocket():
 	def __init__(self):
 		self.incomingConnections = deque() # queue of connections waiting to be accepted, SERVER ONLY
 		self.closingConnections = deque() # queue of connections waiting to be closed, SERVER ONLY
@@ -53,7 +53,8 @@ class Rtpsocket():
 						self.connections[(newConnection.destIP, newConnection.destPort)] = newConnection
 						print self.connections
 					synack = self.create_synack(dest_IP, dest_port)
-					print "Sending SYNACK..."
+					print "Sending SYNACK...."
+					print "Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum)
 					self.udpSocket.sendto(packet.packet_to_bytes(synack), (dest_IP, dest_port))
 
 				if pkt_type == 2 and address in self.connections.keys() and self.connections[address].finReceived == False:
@@ -61,23 +62,29 @@ class Rtpsocket():
 					self.connections[address].ackNum = pkt_seqNum
 					print "Waiting to accept connection with: " + str(address)
 
-				# listening for data packets to automatically place them in the correct receive buffer
+				# listening for data packets to automatically place them in the correct receive buffer, ALSO RESPOND WITH AN ACK
 				if pkt_type == 4 and address in self.connections.keys():
 					#not putting entire packet in receive, only the data because it wasn't working otherwise
 					self.connections[address].rcvBuff.appendleft(pkt_data)
 					self.connections[address].ackNum = pkt_seqNum
+					self.connections[address].seqNum += 1
 					print "Data packet placed in appropriate receive buffer, data: " + pkt_data + ", address: " + str(address)
+					data_ack_packet = self.create_ack(dest_IP, dest_port)
+					print "Sending Data ack"
+					print "Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum)
 
 				# connection wants to close, send a finack in response, wait for the final ack
 				if pkt_type == 8 and address in self.connections.keys():
 					print "FIN Received From: " + str(address)
+					print "Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum)
 					self.connections[address].finReceived = True #set the fin received in connection to true
 					self.connections[address].ackNum = pkt_seqNum
 					finack = self.create_finack_packet(dest_IP, dest_port)
 					self.udpSocket.sendto(packet.packet_to_bytes(finack), address) #send finack to the connection
 					print "Sending finack"
+					print "Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum)
 
-				# ACK from connection that is closing, add it to the closing connection queue	
+				# ACK from connection that is closing, add it to the closing connection queue
 				if pkt_type == 2 and self.connections[address].finReceived == True:
 					print "final ack received, connection is ready to close"
 					self.closingConnections.appendleft(self.connections[address]) #add connection that wants to fin to queue of closing connections
@@ -105,7 +112,7 @@ class Rtpsocket():
 	def connect(self, host, port):
 		#create new connection object
 		newConnection = connection.Connection(self.port, port, host, 0, 0, "Nothing yet", self) #data is literally nothing yet, seqnum and acknum 0
-		
+
 		self.connections[(host, port)] = newConnection #add new connection to connection dictionary
 
 		syn_packet = self.create_syn_packet(host, port) #create syn packet
@@ -118,7 +125,7 @@ class Rtpsocket():
 
 		timeout_start = time.time()
 		timeout = 1
-		
+
 		#we should be using timeout from instance variables
 		while (not synAck_received and time.time() < (timeout_start + timeout)):
 			synAck_packet, address = self.udpSocket.recvfrom(2048);
@@ -129,12 +136,13 @@ class Rtpsocket():
 
 				if pkt_type == 3 and pkt_src == port and pkt_ackNum == 0:
 					print "SYNACK received! Data: " + data
+					print "Seqnum: " + str(self.connections[(host, port)].seqNum)
 					synAck_received = True
 					self.connections[(host, port)].ackNum = pkt_seqNum
 			else:
 				self.udpSocket.sendto(syn_packet, (host, port))
 
-				
+
 		if synAck_received:
 			self.connections[(host, port)].seqNum += 1
 			print "Sending ACK...."
@@ -164,7 +172,7 @@ class Rtpsocket():
 			self.udpSocket.sendto(packet.packet_to_bytes(fin), (connect.destIP, connect.destPort))
 			print "sending FIN"
 			print "Seqnum: " + str(connect.seqNum)
- 
+
 
 			timeout_start = time.time()
 			timeout = 3
@@ -191,7 +199,7 @@ class Rtpsocket():
 						print "Seqnum: " + str(connect.seqNum)
 					else:
 						self.udpSocket.sendto(packet.packet_to_bytes(fin), (connect.destIP, connect.destPort))
-		
+
 		self.connections.clear()
 
 	def clearConnection(self, connect):

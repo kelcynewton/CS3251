@@ -24,12 +24,10 @@ else:
 s.bind(host, port) #bind the host ip with the port if it's valid
 s.listen()
 
-findConnection = False
 
-while(not findConnection):
+while(True):
 	c = s.accept()
 	if isinstance(c, connection.Connection):
-		findConnection = True
 		query = c.recv()
 		print query
 
@@ -57,7 +55,10 @@ while(not findConnection):
 			if validq != 0 and validq == (int(qlength) - 1): #check if attempted query is valid, any typo will fail this condition
 				print response
 				c.send_s(response)
-	time.sleep(1)
+		else:
+        		c.send(response + "Student ID not in system, please enter a valid ID")
+		time.sleep(2)
+		c.close()
 
 print "done"
 sys.exit(1)

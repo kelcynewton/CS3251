@@ -84,42 +84,9 @@ def bytes_to_packet(bytestream):
 	reassembled = create_packet(pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_data)
 	return reassembled
 
-
-
 def split_packet(Packet):
 	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window = struct.unpack(HEADER_FORMAT, Packet.head)
 
 	pkt_contents = Packet.contents
 
 	return pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_contents
-
-
-# myPack = create_packet(8080, 1234, 0, 0, 1, 1, "Hello bitches")
-
-# pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_contents = split_packet(myPack)
-
-# print pkt_src
-# print pkt_dest
-# print pkt_seqNum
-# print pkt_ackNum
-# print pkt_type
-# print pkt_window
-# print pkt_contents
-
-# bytestream = packet_to_bytes(myPack)
-
-# print "==============="
-# print "==============="
-
-# myPack1 = bytes_to_packet(bytestream)
-
-# pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_contents = split_packet(myPack1)
-
-# print pkt_src
-# print pkt_dest
-# print pkt_seqNum
-# print pkt_ackNum
-# print pkt_type
-# print pkt_window
-# print pkt_contents
-

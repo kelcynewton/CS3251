@@ -28,6 +28,7 @@ host, port = args.ip.split(':')
 
 s = rtpsocket.Rtpsocket()
 c = s.connect(host, int(port))
+c.send('sldkfj')
 
 command = ''
 

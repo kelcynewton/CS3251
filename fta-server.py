@@ -4,6 +4,18 @@ import rtpsocket
 import time
 import threading
 
+
+def recv_file(name, connection):
+    TIMEOUT = 3
+    t_start = time.time()
+
+    while (time.time() - t_start < TIMEOUT):
+        data = connection.recv()
+        if (data):
+            with open(name, 'wba') as f:
+                f.write(data)
+            t_start = time.time()
+
 parser = argparse.ArgumentParser(description='File transfer client.')
 
 parser.add_argument("port", type=int, help="Port number to bind to.")
@@ -16,17 +28,15 @@ s.bind('', args.port)
 s.listen()
 
 while(True):
-    c = s.accept()
 
-    if (not c):
-        print('pass1')
-        continue
+    c = None
+    while (not c):
+        c = s.accept()
 
-    cmd = c.recv()
+    cmd = None
 
-    if (not cmd):
-        print('pass2')
-        continue
+    while (not cmd):
+        c.recv()
 
     print cmd
 
@@ -53,15 +63,3 @@ while(True):
     f.close()
 
 s.close()
-
-
-def recv_file(name, connection):
-    TIMEOUT = 3
-    t_start = time.time()
-
-    while (time.time() - t_start < TIMEOUT):
-        data = connection.recv()
-        if (data):
-            with open(name, 'wba') as f:
-                f.write(data)
-            t_start = time.time()

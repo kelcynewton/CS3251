@@ -36,7 +36,7 @@ while(True):
     cmd = None
 
     while (not cmd):
-        c.recv()
+        cmd = c.recv()
 
     print cmd
 

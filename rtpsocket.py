@@ -26,11 +26,15 @@ class Rtpsocket():
 
 	def listen(self):
 		listening = threading.Thread(target=self.listenThread)
+		listening.setDaemon(True)  # Lets aplication still close on ctrl+c
 		listening.start()
 
 	def listenThread(self):
 		while (True):
-			data, address = self.udpSocket.recvfrom(1024)
+			try:
+				data, address = self.udpSocket.recvfrom(1024)
+			except socket.timeout:
+				continue
 			dest_IP = address[0]
 			dest_port = address[1]
 

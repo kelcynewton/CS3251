@@ -1,6 +1,7 @@
 import struct
 import io
 import ctypes
+import pickle
 
 # Header order: Src port, dest port, seqNum, type, window, checksum
 HEADER_WITHOUT_CHECK = "!HHIIHH"
@@ -52,45 +53,46 @@ def create_packet(srcPort, destPort, seqNum, ackNum, pckType, window_size, data)
 	header = struct.pack(HEADER_WITHOUT_CHECK, srcPort, destPort, seqNum, ackNum, pckType, window_size)
 
 	# calculate checksum before adding it to the header
-	# checkSum = calculate_checksum(header + data)
+	checkSum = calculate_checksum(header + data)
 
 	# put checksum in header if it ever works
-	header = struct.pack(HEADER_WITHOUT_CHECK, srcPort, destPort, seqNum, ackNum, pckType, window_size) #, checkSum)
+	header = struct.pack(HEADER_FORMAT, srcPort, destPort, seqNum, ackNum, pckType, window_size, checkSum)
 
 	# create an actual packet with header and data and checkSum eventually
-	returnPacket = Packet(header, data) #, checkSum)
+	returnPacket = Packet(header, data)
 	return returnPacket
 
 def packet_to_bytes(Packet):
-	byteString = bytearray()
-	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_data = split_packet(Packet) #checksum omitted
-	byteString.extend(bytearray(_uint16(pkt_src)))
-	byteString.extend(bytearray(_uint16(pkt_dest)))
-	byteString.extend(bytearray(_uint32(pkt_seqNum)))
-	byteString.extend(bytearray(_uint32(pkt_ackNum)))
-	byteString.extend(bytearray(_uint16(pkt_type)))
-	byteString.extend(bytearray(_uint16(pkt_window)))
+    byteString = pickle.dumps(Packet)
+    return byteString
+	# byteString = bytearray()
+	# pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_checkSum, pkt_data = split_packet(Packet) #checksum omitted
+	# byteString.extend(bytearray(_uint16(pkt_src)))
+	# byteString.extend(bytearray(_uint16(pkt_dest)))
+	# byteString.extend(bytearray(_uint32(pkt_seqNum)))
+	# byteString.extend(bytearray(_uint32(pkt_ackNum)))
+	# byteString.extend(bytearray(_uint16(pkt_type)))
+	# byteString.extend(bytearray(_uint16(pkt_window)))
 	# byteString.extend(bytearray(_uint16(pkt_checkSum))) # check sum stuff
-	byteString.extend(bytearray(pkt_data, 'utf-8'))
-	
-	return byteString
+	# byteString.extend(bytearray(pkt_data, 'utf-8'))
 
 def bytes_to_packet(bytestream):
-	pkt_src = _uint16.from_buffer(bytearray(bytestream[0:2])).value
-	pkt_dest = _uint16.from_buffer(bytearray(bytestream[2:4])).value
-	pkt_seqNum = _uint32.from_buffer(bytearray(bytestream[4:8])).value
-	pkt_ackNum = _uint32.from_buffer(bytearray(bytestream[8:12])).value
-	pkt_type = _uint16.from_buffer(bytearray(bytestream[12:14])).value
-	pkt_window = _uint16.from_buffer(bytearray(bytestream[14:16])).value
+    reassembled_packet = pickle.loads(bytestream)
+    return reassembled_packet
+	# pkt_src = _uint16.from_buffer(bytearray(bytestream[0:2])).value
+	# pkt_dest = _uint16.from_buffer(bytearray(bytestream[2:4])).value
+	# pkt_seqNum = _uint32.from_buffer(bytearray(bytestream[4:8])).value
+	# pkt_ackNum = _uint32.from_buffer(bytearray(bytestream[8:12])).value
+	# pkt_type = _uint16.from_buffer(bytearray(bytestream[12:14])).value
+	# pkt_window = _uint16.from_buffer(bytearray(bytestream[14:16])).value
 	# pkt_checkSum = _uint16.from_buffer(bytearray(bytestream[16:18])).value # check sum stuff
-	pkt_data = bytearray.decode(bytearray(bytestream[16:])) #switch to 18 when adding checksum back
+	# pkt_data = bytearray.decode(bytearray(bytestream[18:])) #switch to 18 when adding checksum back, otherwise 16
 
-	reassembled = create_packet(pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_data)
-	return reassembled
+	# reassembled = create_packet(pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_data)
 
 def split_packet(Packet):
-	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window = struct.unpack(HEADER_WITHOUT_CHECK, Packet.head)
+	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, check_sum = struct.unpack(HEADER_FORMAT, Packet.head)
 
 	pkt_contents = Packet.contents
 
-	return pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_contents # return checksum before contents
+	return pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, check_sum, pkt_contents # return checksum before contents

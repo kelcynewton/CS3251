@@ -42,7 +42,7 @@ class Rtpsocket():
 			if data is not None and address is not None:
 				print "data received from : " + str(address)
 				arrived = packet.bytes_to_packet(data)
-				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_data = packet.split_packet(arrived)
+				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_checksum, pkt_data = packet.split_packet(arrived)
 				print "received data : " + pkt_data
 				print "received seqNum : " + str(pkt_seqNum)
 				print "received ackNum : " + str(pkt_ackNum)
@@ -153,7 +153,7 @@ class Rtpsocket():
 			synAck_packet = packet.bytes_to_packet(synAck_packet)
 
 			if synAck_packet is not None:
-				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, data = packet.split_packet(synAck_packet)
+				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_checksum, data = packet.split_packet(synAck_packet)
 
 				if pkt_type == 3 and pkt_src == port and pkt_ackNum == 0:
 					print "SYNACK received! Data: " + data
@@ -196,7 +196,7 @@ class Rtpsocket():
 			connect.seqNum += 1
 			fin = self.create_fin_packet(connect.destIP, connect.destPort)
 			self.udpSocket.sendto(packet.packet_to_bytes(fin), (connect.destIP, connect.destPort))
-			print "sending FIN to ", connect.destIP, connect.destPort 
+			print "sending FIN to ", connect.destIP, connect.destPort
 			print "Seqnum: " + str(connect.seqNum)
 
 			timeout_start = time.time()
@@ -209,7 +209,7 @@ class Rtpsocket():
 				print "Timed out waiting for FINACK, resending fin"
 				self.udpSocket.sendto(packet.packet_to_bytes(fin), (connect.destIP, connect.destPort))
 
-			self.clearConnection(connect)	
+			self.clearConnection(connect)
 
 
 	def clearConnection(self, connect):

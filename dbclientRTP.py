@@ -19,13 +19,11 @@ else:
 c = s.connect(host, port)
 c.send_s(str(query))
 
-gotresponse = False
 
-while(not gotresponse):
-	response = s.recv()
-	if response is not None:
-		gotresponse = True
-		print response
+#recv starts the same listen thread as the server side to receive messages
+response = s.recv()
+if response is not None:
+	print response
 
 s.close()
 sys.exit(1)

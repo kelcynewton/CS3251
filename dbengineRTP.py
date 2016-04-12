@@ -15,9 +15,9 @@ students = {'903076259':['Anthony', 'Peterson', 231, 63, float(231/63.0)],
 		'903084336':['Stephen', 'Baker', 234, 66, float(234/66.0)]
 												}   #create database (dictionary)
 if (len(sys.argv) == 2): #check to make sure only 1 argument after executable
-    port = int(sys.argv[1])
+	port = int(sys.argv[1])
 else:
-    print "Please enter only the port number you wish to use after the program executable"
+	print "Please enter only the port number you wish to use after the program executable"
 
 
  
@@ -34,9 +34,9 @@ while(True):
 		qlength, query = query.split("+") #get length of query and query
 
 		response = "Server response: "
-	    	validq = 0  #help check if only has valid headers
+		validq = 0  #help check if only has valid headers
 
-	    	if str(query[1:10]) in students.keys(): #make sure student id is valid before continuing query
+		if str(query[1:10]) in students.keys(): #make sure student id is valid before continuing query
 			if ('first_name' in query):
 				response = response + "first_name: " + students[query[1:10]][0] + ", "
 				validq += 1 #increment valid query count
@@ -55,10 +55,14 @@ while(True):
 			if validq != 0 and validq == (int(qlength) - 1): #check if attempted query is valid, any typo will fail this condition
 				print response
 				c.send_s(response)
+			else:
+				c.send("Server response: Please enter a valid query/check for typos")
 		else:
-        		c.send(response + "Student ID not in system, please enter a valid ID")
+			c.send(response + "Student ID not in system, please enter a valid ID")
 		time.sleep(2)
 		c.close()
+	else:
+		time.sleep(1)
 
 print "done"
 sys.exit(1)

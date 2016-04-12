@@ -31,7 +31,7 @@ class Connection():
         self.timeout = False
 
     def recv(self):
-        time.sleep(1)
+        time.sleep(2)
         if len(self.rcvBuff) > 0:
             pkt_data = self.rcvBuff.pop()
             return pkt_data

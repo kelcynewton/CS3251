@@ -27,29 +27,31 @@ class Packet:
 		# self.checkSum = checkSum
 
 def calculate_checksum(data):
-	i = len(data)
-
-	# Handle the case where the length is odd
-	if (i & 1):
-		i -= 1
-		sum = ord(data[i])
-	else:
-		sum = 0
-
-    # Iterate through chars two by two and sum their byte values
-	while i > 0:
-		i -= 2
-		sum += (ord(data[i + 1]) << 8) + ord(data[i])
-
-    # Wrap overflow around
-	sum = (sum >> 16) + (sum & 0xffff)
-
-	result = (~ sum) & 0xffff  # One's complement
-	result = result >> 8 | ((result & 0xff) << 8)  # Swap bytes
+	# i = len(data)
+	#
+	# # Handle the case where the length is odd
+	# if (i & 1):
+	# 	i -= 1
+	# 	sum = ord(data[i])
+	# else:
+	# 	sum = 0
+	#
+    # # Iterate through chars two by two and sum their byte values
+	# while i > 0:
+	# 	i -= 2
+	# 	sum += (ord(data[i + 1]) << 8) + ord(data[i])
+	#
+    # # Wrap overflow around
+	# sum = (sum >> 16) + (sum & 0xffff)
+	#
+	# result = (~ sum) & 0xffff  # One's complement
+	# result = result >> 8 | ((result & 0xff) << 8)  # Swap bytes
+	result = sum(data) % 65535
 	return result
 
 
 def create_packet(srcPort, destPort, seqNum, ackNum, pckType, window_size, data):
+
 	header = struct.pack(HEADER_WITHOUT_CHECK, srcPort, destPort, seqNum, ackNum, pckType, window_size)
 
 	# calculate checksum before adding it to the header
@@ -90,9 +92,9 @@ def bytes_to_packet(bytestream):
 
 	# reassembled = create_packet(pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_data)
 
-def split_packet(Packet):
-	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, check_sum = struct.unpack(HEADER_FORMAT, Packet.head)
+def split_packet(packet):
+	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, check_sum = struct.unpack(HEADER_FORMAT, packet.head)
 
-	pkt_contents = Packet.contents
+	pkt_contents = packet.contents
 
 	return pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, check_sum, pkt_contents # return checksum before contents

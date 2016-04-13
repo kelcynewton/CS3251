@@ -30,36 +30,43 @@ s.listen()
 while(True):
 
     c = None
-    while (not c):
+    while (c is None):
         c = s.accept()
+
+    print("SERVER: Connection established.")
 
     cmd = None
 
-    while (not cmd):
-        cmd = c.recv()
+    while (c.connected):
+        cmd = c.recv().decode()
 
-    print cmd
+        print('SERVER: ', cmd)
 
-    cmd_list = cmd.split(' ')
+        cmd_list = cmd.split(' ')
 
-    if (len(cmd_list) == 2 and cmd_list[0] == 'get'):
-        req_file = cmd_list[1]
-        with open(req_file, 'r') as f:
-            c.send(f.read())
-    elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
-        req_file = cmd_list[1]
-        sent_file = cmd_list[2]
+        print('SERVER: ', cmd_list)
 
-        with open(req_file, 'rb') as f:
-            c.send(f.read())
+        if (len(cmd_list) == 2 and cmd_list[0] == 'get'):
+            req_file = cmd_list[1]
+            # c.send("SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING")
+            with open(req_file, 'r') as f:
+                data = f.read()
+                print('SERVER: Sending ', str(data))
+                c.send(data)
+                print('SERVER: Send')
+        elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
+            req_file = cmd_list[1]
+            sent_file = cmd_list[2]
+            with open(req_file, 'rb') as f:
+                data = f.read()
+                print('SERVER: Sending ', str(data))
+                c.send(data)
+                print('SERVER: Send')
+            threading.Thread(target=recv_file, args=(sent_file, c))
+        else:
+            print('SERVER: Invalid command.')
+            c.send('Invalid command.')
 
-        threading.Thread(target=recv_file, args=(sent_file, c))
-    else:
-        s.send('Invalid command.')
-        continue
-
-    f = open(cmd_list[1], 'rb')
-    s.send(f)
-    f.close()
+        cmd = None
 
 s.close()

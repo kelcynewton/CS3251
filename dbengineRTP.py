@@ -17,10 +17,10 @@ students = {'903076259':['Anthony', 'Peterson', 231, 63, float(231/63.0)],
 if (len(sys.argv) == 2): #check to make sure only 1 argument after executable
 	port = int(sys.argv[1])
 else:
-	print "Please enter only the port number you wish to use after the program executable"
+	print("Please enter only the port number you wish to use after the program executable")
 
 
- 
+
 s.bind(host, port) #bind the host ip with the port if it's valid
 s.listen()
 
@@ -29,7 +29,7 @@ while(True):
 	c = s.accept()
 	if isinstance(c, connection.Connection):
 		query = c.recv()
-		print query
+		print(query)
 
 		qlength, query = query.split("+") #get length of query and query
 
@@ -53,7 +53,7 @@ while(True):
 				response = response + "gpa: " + str(students[query[1:10]][4])
 				validq += 1
 			if validq != 0 and validq == (int(qlength) - 1): #check if attempted query is valid, any typo will fail this condition
-				print response
+				print(response)
 				c.send_s(response)
 			else:
 				c.send("Server response: Please enter a valid query/check for typos")
@@ -64,5 +64,5 @@ while(True):
 	else:
 		time.sleep(1)
 
-print "done"
+print("done")
 sys.exit(1)

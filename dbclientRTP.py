@@ -14,7 +14,7 @@ if len(sys.argv) > 2:					#make sure query is actually entered
 	qlength = len(sys.argv[2:])
 	query = str(qlength) + "+" + query	#attach length of query to front of query
 else:
-	print "Please enter a valid query"
+	print("Please enter a valid query")
 
 c = s.connect(host, port)
 c.send_s(str(query))
@@ -23,7 +23,7 @@ c.send_s(str(query))
 #recv starts the same listen thread as the server side to receive messages
 response = s.recv()
 if response is not None:
-	print response
+	print(response)
 
 s.close()
 sys.exit(1)

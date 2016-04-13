@@ -11,9 +11,10 @@ def recv_file(name, connection):
 
     while (time.time() - t_start < TIMEOUT):
         data = connection.recv()
-        if (data):
-            with open(name, 'wba') as f:
-                f.write(data)
+        if (data is not None):
+            # with open(name, 'wba') as f:
+            #     f.write(data)
+            print(data)
             t_start = time.time()
 
 
@@ -27,13 +28,13 @@ args = parser.parse_args()
 host, port = args.ip.split(':')
 
 s = rtpsocket.Rtpsocket()
+s.listen()
 c = s.connect(host, int(port))
-c.send('sldkfj')
 
 command = ''
 
 while (command != 'disconnect'):
-    command = raw_input('Command: ')
+    command = input('Command: ')
 
     cmd_list = command.split(' ')
 
@@ -42,8 +43,9 @@ while (command != 'disconnect'):
     elif (len(cmd_list) == 2 and cmd_list[0] == 'get'):
         recv_name = cmd_list[1]
         c.send(' '.join(cmd_list[0:2]))
-
-        threading.Thread(target=recv_file, args=(recv_name, c))
+        print("RECIEVING")
+        # threading.Thread(target=recv_file, args=(recv_name, c))
+        print(c.recv())
     elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
         recv_name = cmd_list[1]
         send_name = cmd_list[2]
@@ -65,4 +67,5 @@ while (command != 'disconnect'):
 
 
 print('Disconnecting')
+c.close()
 s.close()

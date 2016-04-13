@@ -1,8 +1,11 @@
 import packet
+from packet import Packet
 import time
 import rtpsocket
+import threading
 from math import ceil
 from collections import deque
+from sys import getsizeof
 
 # Packet types:
 # SYN = 1
@@ -12,7 +15,7 @@ from collections import deque
 
 class Connection():
 
-    MAX_SIZE = 1024
+    MAX_SIZE = 512
     TIMEOUT = 1
 
     def __init__(self, sourcePort, destPort, destIP, seqNum, ackNum, data, rtpsocket):
@@ -31,40 +34,41 @@ class Connection():
         self.timeout = False
 
     def recv(self):
-        time.sleep(2)
-        if len(self.rcvBuff) > 0:
-            pkt_data = self.rcvBuff.pop()
-            return pkt_data
+        while (len(self.rcvBuff) == 0):
+            pass
+
+        while (len(self.rcvBuff) > 0):
+            return self.rcvBuff.pop()
 
     def send(self, data):
-        num_packets = int(ceil(len(data) // 1024))
+        if (isinstance(data, str)):
+            data = data.encode()
+
+        print("Sending", getsizeof(data))
+        num_packets = int(ceil(getsizeof(data) / float(self.MAX_SIZE)))
+
+        print("Packets: ", num_packets)
+
         for i in range(0, num_packets):
-            start = i * 1024
-            end = min(((i + 1) * 1024) - 1, len(data))
-            data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data[start:end])
-            self.sndBuff.appendleft(data_packet)
+            start = i * self.MAX_SIZE
+            end = min(((i + 1) * self.MAX_SIZE) - 1, len(data))
+            self.sndBuff.appendleft(data[start:end])
 
         while(len(self.sndBuff) > 0 and self.connected):
-            data_packet = self.sndBuff.pop()
+
+            data = self.sndBuff.pop()
+            data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data)
             d_data = packet.split_packet(data_packet)
             self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), (self.destIP, self.destPort))
             self.timeout = False
             t = threading.Timer(1, self.timeout_conn)
-            while(not self.timeout and len(rcvBuff) == 0):
+            while(not self.timeout and len(self.rcvBuff) == 0):
                 pass
                 # DO NOTHING
             if (self.timeout):
                 self.sndBuff.appendright(data_packet)
                 continue
-            else:
-                recv_pkt = self.rcvBuff.pop()
-                p_data = [packet.split_packet(recv_pkt)]
-                if (p_data[4] == 2 and p_data[3] == d_data[3]):
-                    continue
-                else:
-                    self.rcvBuff.appendright(recv_pkt)
-                    self.sndBuff.appendright(data_packet)
-                    continue
+        print("finished sending")
 
     def timeout_conn(self):
         self.timeout = True
@@ -77,13 +81,13 @@ class Connection():
         if len(self.sndBuff) > 0 and self.connected:
                 data_packet = self.sndBuff.pop()
                 self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), address)
-                print "Sending data..."
-                print "Seqnum: " + str(self.seqNum)
+                print("Sending data...")
+                print("Seqnum: " + str(self.seqNum))
 
     def close(self):
-        print "closingConnections len: " + str(len(self.rtpsocket.closingConnections))
+        print("closingConnections len: " + str(len(self.rtpsocket.closingConnections)))
         if self in self.rtpsocket.closingConnections:
             self.rtpsocket.closingConnections.pop()
-            print "closingConnections len after pop: " + str(len(self.rtpsocket.closingConnections))
+            print("closingConnections len after pop: " + str(len(self.rtpsocket.closingConnections)))
             self.rtpsocket.clearConnection(self)
 #later add in dynamic receiver window, for now window is 1 packet

@@ -8,7 +8,6 @@ import time
 def recv_file(name, connection):
     TIMEOUT = 3
     t_start = time.time()
-
     while (time.time() - t_start < TIMEOUT):
         data = connection.recv()
         if (data is not None):
@@ -44,7 +43,7 @@ while (command != 'disconnect'):
         recv_name = cmd_list[1]
         c.send(' '.join(cmd_list[0:2]))
         print("RECIEVING")
-        # threading.Thread(target=recv_file, args=(recv_name, c))
+        threading.Thread(target=recv_file, args=(recv_name, c))
         print(c.recv())
     elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
         recv_name = cmd_list[1]

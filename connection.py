@@ -15,7 +15,7 @@ from sys import getsizeof
 
 class Connection():
 
-    MAX_SIZE = 512
+    MAX_SIZE = 824
     TIMEOUT = 1
 
     def __init__(self, sourcePort, destPort, destIP, seqNum, ackNum, data, rtpsocket):
@@ -62,10 +62,10 @@ class Connection():
             self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), (self.destIP, self.destPort))
             self.timeout = False
             t = threading.Timer(1, self.timeout_conn)
-            while(not self.timeout and len(self.rcvBuff) == 0):
+            while(not self.timeout and len(self.rcvBuff) > 0): #wait until timeout detected or we get something valid back
                 pass
                 # DO NOTHING
-            if (self.timeout):
+            if (self.timeout): #if we timed out before we got something back, resend the packet
                 self.sndBuff.appendright(data_packet)
                 continue
         print("finished sending")

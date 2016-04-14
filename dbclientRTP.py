@@ -17,11 +17,11 @@ else:
 	print("Please enter a valid query")
 
 c = s.connect(host, port)
-c.send_s(str(query))
-
+c.send(str(query))
 
 #recv starts the same listen thread as the server side to receive messages
 response = s.recv()
+
 if response is not None:
 	print(response)
 

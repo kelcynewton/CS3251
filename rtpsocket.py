@@ -7,6 +7,8 @@ import threading
 import random
 import time
 
+# "get shakespeare.txt"
+
 # Packet types:
 # SYN = 1
 # ACK = 2
@@ -32,6 +34,7 @@ class Rtpsocket():
 
 	def listenThread(self):
 		while (True):
+			time.sleep(.04)
 			try:
 				data, address = self.udpSocket.recvfrom(1024)
 			except socket.timeout:
@@ -43,7 +46,7 @@ class Rtpsocket():
 				print("data received from : " + str(address))
 				arrived = packet.bytes_to_packet(data)
 				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_checksum, pkt_data = packet.split_packet(arrived)
-				print("received data : ")
+				print("received data : " + str(pkt_data))
 				print("received seqNum : " + str(pkt_seqNum))
 				print("received ackNum : " + str(pkt_ackNum))
 				print("received type : " + str(pkt_type))
@@ -129,6 +132,7 @@ class Rtpsocket():
 			self.connections[address].ackNum += 1
 			self.connections[address].seqNum += 1
 			self.connections[address].connected = True
+			print "Connection accepted"
 			return newConnect
 
 
@@ -151,7 +155,7 @@ class Rtpsocket():
 
 		#we should be using timeout from instance variables
 		while (not synAck_received and time.time() < (timeout_start + timeout)):
-			synAck_packet, address = self.udpSocket.recvfrom(2048);
+			synAck_packet, address = self.udpSocket.recvfrom(1024);
 			synAck_packet = packet.bytes_to_packet(synAck_packet)
 
 			if synAck_packet is not None:
@@ -186,6 +190,7 @@ class Rtpsocket():
 
 		while not gotData:
 			if len(self.connections[address].rcvBuff) > 0:
+				print "Got Data"
 				gotData = True
 				data = self.connections[address].rcvBuff.pop()
 

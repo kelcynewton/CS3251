@@ -46,7 +46,10 @@ def calculate_checksum(data):
 	#
 	# result = (~ sum) & 0xffff  # One's complement
 	# result = result >> 8 | ((result & 0xff) << 8)  # Swap bytes
-	result = sum(data) % 65535
+
+	b = bytearray(data)
+
+	result = sum(b) % 65535
 	return result
 
 

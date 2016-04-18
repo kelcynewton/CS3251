@@ -34,7 +34,7 @@ class Rtpsocket():
 
 	def listenThread(self):
 		while (True):
-			time.sleep(.04)
+			# time.sleep(.05)
 			try:
 				data, address = self.udpSocket.recvfrom(1024)
 			except socket.timeout:
@@ -66,6 +66,7 @@ class Rtpsocket():
 
 				# ACK for regular data packets needs to be added for server side, let's you know to move on to next packet in window
 				if pkt_type == 2 and self.connections[address].connected == True:
+					self.connections[address].ackReceived = True
 					print("data ack received")
 
 				# ACK from packet that is trying to complete handshake
@@ -132,7 +133,7 @@ class Rtpsocket():
 			self.connections[address].ackNum += 1
 			self.connections[address].seqNum += 1
 			self.connections[address].connected = True
-			print "Connection accepted"
+			print ("Connection accepted")
 			return newConnect
 
 
@@ -190,7 +191,7 @@ class Rtpsocket():
 
 		while not gotData:
 			if len(self.connections[address].rcvBuff) > 0:
-				print "Got Data"
+				print ("Got Data")
 				gotData = True
 				data = self.connections[address].rcvBuff.pop()
 

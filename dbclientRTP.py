@@ -1,29 +1,39 @@
+"""DB Client TCP executable."""
+import argparse
 import rtpsocket
-import sys
 
-s = rtpsocket.Rtpsocket()
+# Utilize argparse to take in command line arguments.
+parser = argparse.ArgumentParser()
 
-host, port = str(sys.argv[1]).split(':') #seperate host IP from the socket
-port = int(port)
+parser.add_argument("ip", type=str, help="IP Address and Port")
+parser.add_argument("key", type=int, help="GTID numbers")
+parser.add_argument('fields', nargs='*', help="Data fields")
+args = parser.parse_args()
 
-if len(sys.argv) > 2:					#make sure query is actually entered
-	query = sys.argv[2:]
-	query = str(query).replace("[", "")		#strip brackets and blank space from query
-	query = query.replace("]", "")
-	query = query.replace(" ", "")
-	qlength = len(sys.argv[2:])
-	query = str(qlength) + "+" + query	#attach length of query to front of query
-else:
-	print("Please enter a valid query")
+# Split ip into host and port
+if ':' not in args.ip:
+    print('Error: Input ip as a IP:PORT pair.')
+    exit(1)
 
-c = s.connect(host, port)
-c.send(str(query))
+parts = args.ip.split(':')
+host = parts[0]
+port = int(parts[1])
 
-#recv starts the same listen thread as the server side to receive messages
-response = s.recv()
+# Combine the key and the query and concatenate to form the query string.
+query = []
+query.append(str(args.key))
+query.extend(args.fields)
+query_str = ' '.join(query)
 
-if response is not None:
-	print(response)
 
-s.close()
-sys.exit(1)
+# Create the socket and connect to the server passed in.
+socket = rtpsocket.Rtpsocket()
+socket.listen()
+connection = socket.connect(host, port)
+
+
+# Try to send the query and receive the response.
+connection.send(query_str.encode('utf-8'))
+response = connection.recv()
+response_str = response.decode('utf-8')
+print('Server response: {}'.format(response_str))

@@ -181,7 +181,7 @@ class Rtpsocket():
 			return self.connections[(host, port)]
 
 	def recv(self): #should only be called on client side, because i know that there is only 1 connection in the connection table
-		address = self.connections.keys()[0]
+		address = list(self.connections.keys())[0]
 
 		listening = threading.Thread(target=self.listenThread)
 		listening.setDaemon(True)  # Lets aplication still close on ctrl+c

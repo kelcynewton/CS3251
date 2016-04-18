@@ -1,68 +1,79 @@
+"""TCP implementation of the server."""
+import argparse
+import re
+from time import sleep
 import rtpsocket
-import sys
-import connection
-import socket
-import time
 
-s = rtpsocket.Rtpsocket()
-host = '127.0.0.1'
-students = {'903076259':['Anthony', 'Peterson', 231, 63, float(231/63.0)],
-		'903084074':['Richard', 'Harris', 236, 66, float(236/66.0)],
-		'903077650':['Joe', 'Miller', 224, 65, float(224/65.0)],
-		'903083691':['Todd', 'Collins', 218, 56, float(218/56.0)],
-		'903082265':['Laura', 'Stewart', 207, 64, float(207/64.0)],
-		'903075951':['Marie', 'Cox', 246, 63, float(246/63.0)],
-		'903084336':['Stephen', 'Baker', 234, 66, float(234/66.0)]
-												}   #create database (dictionary)
-if (len(sys.argv) == 2): #check to make sure only 1 argument after executable
-	port = int(sys.argv[1])
-else:
-	print("Please enter only the port number you wish to use after the program executable")
+import student_data
+
+parser = argparse.ArgumentParser()
+data = student_data.data
+valid_fields = student_data.valid_fields
+
+# Parse Arguments: python dbengineTCP.py PORT
+parser.add_argument("port", type=int, help="Port number")
+args = parser.parse_args()
+
+# Create TCP socket and bind to the passed port.
+socket = rtpsocket.Rtpsocket()
+print("Server started")
+
+socket.bind('', args.port)
+print("Server bound to port: {}".format(args.port))
 
 
+# Set the socket to listen for incoming connections.
+socket.listen()
 
-s.bind(host, port) #bind the host ip with the port if it's valid
-s.listen()
+while True:
+    connection = None
 
+    while connection is None:
+      connection = socket.accept()
 
-while(True):
-	c = s.accept()
-	if isinstance(c, connection.Connection):
-		query = c.recv()
-		print(query)
+    client_msg = connection.recv()
+    client_str = client_msg.decode('utf-8')
+    client_str = re.sub("[^a-zA-Z\d_ ]", "", client_str)
 
-		qlength, query = query.split("+") #get length of query and query
+    # Split the query string into the key and fields
+    query = client_str.split(' ')
+    message = ''
+    key = ''
+    fields = ''
+    error = False
 
-		response = "Server response: "
-		validq = 0  #help check if only has valid headers
+    # Check that the first part of the query is a key matching an id number.
+    if (re.match(r'\d{9}', query[0])):
+        key = query[0]
+        fields = query[1:]
+    else:
+        error = True
+        message = 'Malformed key'
 
-		if str(query[1:10]) in students.keys(): #make sure student id is valid before continuing query
-			if ('first_name' in query):
-				response = response + "first_name: " + students[query[1:10]][0] + ", "
-				validq += 1 #increment valid query count
-			if ('last_name' in query):
-				response = response + "last_name: " + students[query[1:10]][1] + ", "
-				validq += 1
-			if ('quality_points' in query):
-				response = response + "quality_points: " + str(students[query[1:10]][2]) + ", "
-				validq += 1
-			if ('gpa_hours' in query):
-				response = response + "gpa_hours: " + str(students[query[1:10]][3]) + ", "
-				validq += 1
-			if ('gpa' in query):
-				response = response + "gpa: " + str(students[query[1:10]][4])
-				validq += 1
-			if validq != 0 and validq == (int(qlength) - 1): #check if attempted query is valid, any typo will fail this condition
-				print(response)
-				c.send_s(response)
-			else:
-				c.send("Server response: Please enter a valid query/check for typos")
-		else:
-			c.send(response + "Student ID not in system, please enter a valid ID")
-		time.sleep(2)
-		c.close()
-	else:
-		time.sleep(1)
+    # Check if each of the remaining fields is a valid field to search for.
+    if (not error):
+        for field in fields:
+            if (field not in valid_fields):
+                error = True
+                message = '{} is not a valid field'.format(field)
+                break
 
-print("done")
-sys.exit(1)
+    # Finally, use they key to look up the record and build a response.
+    if (not error):
+        if (key in data):
+            results = []
+            for field in fields:
+                results.append('{}: {}'.format(field, data[key][field]))
+            message = ', '.join(results)
+        else:
+            error = True
+            message = '{} was not found'.format(key)
+
+    # Send the response back to the client.
+    print('Response: {}'.format(message))
+    connection.send(message.encode('utf-8'))
+
+    # Close the socket that is bound to the connected client.
+    connection.close()
+
+server.close()

@@ -43,13 +43,13 @@ class Rtpsocket():
 			dest_port = address[1]
 
 			if data is not None and address is not None:
-				print("data received from : " + str(address))
+				# print("data received from : " + str(address))
 				arrived = packet.bytes_to_packet(data)
-				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_checksum, pkt_data = packet.split_packet(arrived)
-				print("received data : " + str(pkt_data))
-				print("received seqNum : " + str(pkt_seqNum))
-				print("received ackNum : " + str(pkt_ackNum))
-				print("received type : " + str(pkt_type))
+				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, lastpacket, pkt_checksum, pkt_data = packet.split_packet(arrived)
+				# print("received data : " + str(pkt_data))
+				# print("received seqNum : " + str(pkt_seqNum))
+				# print("received ackNum : " + str(pkt_ackNum))
+				# print("received type : " + str(pkt_type))
 
 				# IP address & port that hasn't been seen is trying to SYN, need to send synack & create new connection object
 				if pkt_type == 1 and address not in self.connections.keys():
@@ -67,7 +67,7 @@ class Rtpsocket():
 				# ACK for regular data packets needs to be added for server side, let's you know to move on to next packet in window
 				if pkt_type == 2 and self.connections[address].connected == True:
 					self.connections[address].ackReceived = True
-					print("data ack received")
+					# print("data ack received")
 
 				# ACK from packet that is trying to complete handshake
 				if pkt_type == 2 and address in self.connections.keys() and self.connections[address].finReceived == False and self.connections[address].connected == False:
@@ -84,14 +84,20 @@ class Rtpsocket():
 
 				# listening for data packets to automatically place them in the correct receive buffer, ALSO RESPOND WITH AN ACK
 				if pkt_type == 4 and address in self.connections.keys():
-					#not putting entire packet in receive, only the data because it wasn't working otherwise
+					#not putting entire packet in receive, only the data
 					self.connections[address].rcvBuff.appendleft(pkt_data)
+					
+					# when file transfer is complete, put a none in the receive buff to indicate
+					if (lastpacket == 1):
+						print("Last packet received!", lastpacket)
+						self.connections[address].rcvBuff.appendleft(True)
+					
 					self.connections[address].ackNum = pkt_seqNum
 					self.connections[address].seqNum += 1
-					print("Data packet placed in appropriate receive buffer" + ", address: " + str(address))
+					# print("Data packet placed in appropriate receive buffer" + ", address: " + str(address))
 					data_ack_packet = self.create_ack(dest_IP, dest_port)
-					print("Sending Data ack")
-					print("Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum))
+					# print("Sending Data ack")
+					# print("Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum))
 					self.udpSocket.sendto(packet.packet_to_bytes(data_ack_packet), (dest_IP, dest_port))
 
 				# connection wants to close, send a finack in response, wait for the final ack
@@ -160,7 +166,7 @@ class Rtpsocket():
 			synAck_packet = packet.bytes_to_packet(synAck_packet)
 
 			if synAck_packet is not None:
-				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_checksum, data = packet.split_packet(synAck_packet)
+				pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, lastpacket, pkt_checksum, data = packet.split_packet(synAck_packet)
 
 				if pkt_type == 3 and pkt_src == port and pkt_ackNum == 0:
 					print("SYNACK received!")
@@ -240,9 +246,9 @@ class Rtpsocket():
 		ack_packet = packet.create_packet(self.port, port, self.connections[(host, port)].seqNum, self.connections[(host, port)].ackNum, 2, self.connections[(host,port)].window_size, b'0')
 		return ack_packet
 
-	def create_data_packet(self, host, port, data):
+	def create_data_packet(self, host, port, data, sendsize):
 		# packet for data that will not require more than 1 packet to encapsulate, type set to 4
-		data_packet = packet.create_packet(self.port, port, self.connections[(host, port)].seqNum, self.connections[(host, port)].ackNum, 4, self.connections[(host,port)].window_size, data)
+		data_packet = packet.create_packet(self.port, port, self.connections[(host, port)].seqNum, self.connections[(host, port)].ackNum, 4, self.connections[(host,port)].window_size, data, sendsize)
 		return data_packet
 
 	def create_fin_packet(self, host, port):

@@ -38,7 +38,11 @@ while(True):
     cmd = None
 
     while (c.connected):
-        cmd = c.recv().decode()
+        cmd = c.recv()
+        if (cmd is True):
+            cmd = None
+            continue
+        cmd = cmd.decode()
 
         print('SERVER: ', cmd)
 
@@ -48,8 +52,7 @@ while(True):
 
         if (len(cmd_list) == 2 and cmd_list[0] == 'get'):
             req_file = cmd_list[1]
-            # c.send("SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING SOME REALLY LONG STRING")
-            with open(req_file, 'r') as f:
+            with open(req_file, 'rb') as f: #open file with wb
                 data = f.read()
                 print('SERVER: Sending ', str(data))
                 c.send(data)

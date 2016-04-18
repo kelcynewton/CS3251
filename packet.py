@@ -3,9 +3,9 @@ import io
 import ctypes
 import pickle
 
-# Header order: Src port, dest port, seqNum, type, window, checksum
-HEADER_WITHOUT_CHECK = "!HHIIHH"
-HEADER_FORMAT = "!HHIIHHH" #add H back for checksum, use above format without checksum
+# Header order: Src port, dest port, seqNum, type, window, lastpacket, checksum
+HEADER_WITHOUT_CHECK = "!HHIIHHI"
+HEADER_FORMAT = "!HHIIHHIH" #add H back for checksum, use above format without checksum
 # I = int, 4 bytes
 # H = unsigned short, 2 bytes
 # ! = network byte order
@@ -21,9 +21,10 @@ _uint32 = ctypes.c_uint32
 string = ctypes.c_char_p
 
 class Packet:
-	def __init__(self, header, data): #, checkSum):
+	def __init__(self, header, data, lastpacket=0):
 		self.head = header
 		self.contents = data
+		self.lastpacket = lastpacket
 		# self.checkSum = checkSum
 
 def calculate_checksum(data):
@@ -53,51 +54,31 @@ def calculate_checksum(data):
 	return result
 
 
-def create_packet(srcPort, destPort, seqNum, ackNum, pckType, window_size, data):
+def create_packet(srcPort, destPort, seqNum, ackNum, pckType, window_size, data, lastpacket=0):
 
-	header = struct.pack(HEADER_WITHOUT_CHECK, srcPort, destPort, seqNum, ackNum, pckType, window_size)
+	header = struct.pack(HEADER_WITHOUT_CHECK, srcPort, destPort, seqNum, ackNum, pckType, window_size, lastpacket)
 
 	# calculate checksum before adding it to the header
 	checkSum = calculate_checksum(header + data)
 
 	# put checksum in header if it ever works
-	header = struct.pack(HEADER_FORMAT, srcPort, destPort, seqNum, ackNum, pckType, window_size, checkSum)
+	header = struct.pack(HEADER_FORMAT, srcPort, destPort, seqNum, ackNum, pckType, window_size, lastpacket, checkSum)
 
 	# create an actual packet with header and data and checkSum eventually
-	returnPacket = Packet(header, data)
+	returnPacket = Packet(header, data, lastpacket)
 	return returnPacket
 
 def packet_to_bytes(Packet):
     byteString = pickle.dumps(Packet)
     return byteString
-	# byteString = bytearray()
-	# pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_checkSum, pkt_data = split_packet(Packet) #checksum omitted
-	# byteString.extend(bytearray(_uint16(pkt_src)))
-	# byteString.extend(bytearray(_uint16(pkt_dest)))
-	# byteString.extend(bytearray(_uint32(pkt_seqNum)))
-	# byteString.extend(bytearray(_uint32(pkt_ackNum)))
-	# byteString.extend(bytearray(_uint16(pkt_type)))
-	# byteString.extend(bytearray(_uint16(pkt_window)))
-	# byteString.extend(bytearray(_uint16(pkt_checkSum))) # check sum stuff
-	# byteString.extend(bytearray(pkt_data, 'utf-8'))
 
 def bytes_to_packet(bytestream):
     reassembled_packet = pickle.loads(bytestream)
     return reassembled_packet
-	# pkt_src = _uint16.from_buffer(bytearray(bytestream[0:2])).value
-	# pkt_dest = _uint16.from_buffer(bytearray(bytestream[2:4])).value
-	# pkt_seqNum = _uint32.from_buffer(bytearray(bytestream[4:8])).value
-	# pkt_ackNum = _uint32.from_buffer(bytearray(bytestream[8:12])).value
-	# pkt_type = _uint16.from_buffer(bytearray(bytestream[12:14])).value
-	# pkt_window = _uint16.from_buffer(bytearray(bytestream[14:16])).value
-	# pkt_checkSum = _uint16.from_buffer(bytearray(bytestream[16:18])).value # check sum stuff
-	# pkt_data = bytearray.decode(bytearray(bytestream[18:])) #switch to 18 when adding checksum back, otherwise 16
-
-	# reassembled = create_packet(pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, pkt_data)
 
 def split_packet(packet):
-	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, check_sum = struct.unpack(HEADER_FORMAT, packet.head)
+	pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, lastpacket, check_sum = struct.unpack(HEADER_FORMAT, packet.head)
 
 	pkt_contents = packet.contents
 
-	return pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, check_sum, pkt_contents # return checksum before contents
+	return pkt_src, pkt_dest, pkt_seqNum, pkt_ackNum, pkt_type, pkt_window, lastpacket, check_sum, pkt_contents # return checksum before contents

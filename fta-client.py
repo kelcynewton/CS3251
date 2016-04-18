@@ -8,13 +8,16 @@ import time
 def recv_file(name, connection):
     TIMEOUT = 3
     t_start = time.time()
+    print ("Entering receive file")
+    name = "Server" + name
     while (time.time() - t_start < TIMEOUT):
         data = connection.recv()
-        if (data is not None):
-            # with open(name, 'wba') as f:
-            #     f.write(data)
-            print(data)
+        if (data is not None and data is not True):
+            with open(name, 'ba') as f:
+                f.write(data)
             t_start = time.time()
+        elif (data is True):
+            return
 
 
 parser = argparse.ArgumentParser(description='File transfer client.')
@@ -43,8 +46,8 @@ while (command != 'disconnect'):
         recv_name = cmd_list[1]
         c.send(' '.join(cmd_list[0:2]))
         print("RECIEVING")
-        threading.Thread(target=recv_file, args=(recv_name, c))
-        print(c.recv())
+        # threading.Thread(target=recv_file, args=(recv_name, c)).start()
+        recv_file(recv_name, c)
     elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
         recv_name = cmd_list[1]
         send_name = cmd_list[2]

@@ -37,9 +37,8 @@ class Connection():
     def recv(self):
         while (len(self.rcvBuff) == 0):
             pass
-
-        while (len(self.rcvBuff) > 0):
-            return self.rcvBuff.pop()
+        data = self.rcvBuff.pop()
+        return data
 
     def send(self, data):
         if (isinstance(data, str)):
@@ -60,13 +59,16 @@ class Connection():
             self.ackReceived = False
             data = self.sndBuff.pop()
             self.seqNum += 1
-            data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data)
+            if (len(self.sndBuff) == 0):
+                # last packet sets the lastpacket bit to 1
+                data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data, 1)
+            else:
+                data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data, 0)
             d_data = packet.split_packet(data_packet)
             self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), (self.destIP, self.destPort))
             self.timeout = False
             t = threading.Timer(1, self.timeout_conn)
             while(not self.timeout and not self.ackReceived): #wait until timeout detected or we get something valid back
-                # print ("ASGJAFG")
                 pass
                 # DO NOTHING
             if (self.timeout): #if we timed out before we got something back, resend the packet

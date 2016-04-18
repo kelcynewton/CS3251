@@ -51,7 +51,7 @@ class Connection():
 
         for i in range(0, num_packets):
             start = i * self.MAX_SIZE
-            end = min(((i + 1) * self.MAX_SIZE) - 1, len(data))
+            end = min(((i + 1) * self.MAX_SIZE), len(data))
             self.sndBuff.appendleft(data[start:end])
 
         while(len(self.sndBuff) > 0 and self.connected):

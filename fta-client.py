@@ -8,8 +8,8 @@ import time
 def recv_file(name, connection):
     TIMEOUT = 3
     t_start = time.time()
-    print ("Entering receive file")
-    name = "Server" + name
+    print ("Entering get file")
+    name = "get_" + name
     while (time.time() - t_start < TIMEOUT):
         data = connection.recv()
         if (data is not None and data is not True):
@@ -42,23 +42,26 @@ while (command != 'disconnect'):
 
     if (len(cmd_list) == 1 and cmd_list[0] == 'disconnect'):
         continue
+    
     elif (len(cmd_list) == 2 and cmd_list[0] == 'get'):
         recv_name = cmd_list[1]
         c.send(' '.join(cmd_list[0:2]))
         print("RECIEVING")
         # threading.Thread(target=recv_file, args=(recv_name, c)).start()
         recv_file(recv_name, c)
+    
     elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
         recv_name = cmd_list[1]
         send_name = cmd_list[2]
 
         c.send(' '.join(cmd_list[0:3]))
 
-        with open(send_name, 'wb') as f:
+        with open(send_name, 'rb') as f:
             data = f.read()
             c.send(data)
 
-        threading.Thread(target=recv_file, args=(recv_name, c))
+        # threading.Thread(target=recv_file, args=(recv_name, c)).start()
+        recv_file(recv_name, c)
     else:
         print(
             'Please input a command in one of the following formats:\n' +

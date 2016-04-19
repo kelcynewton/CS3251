@@ -6,15 +6,24 @@ import threading
 
 
 def recv_file(name, connection):
-    TIMEOUT = 3
+    TIMEOUT = 5
     t_start = time.time()
-
+    print ("Entering post file")
+    name = "post_" + name
+    count = 0
     while (time.time() - t_start < TIMEOUT):
+        print ("Receive loop entered")
+        count += 1
         data = connection.recv()
-        if (data):
-            with open(name, 'wba') as f:
+        if (data is not None and data is not True):
+            with open(name, 'ba') as f:
                 f.write(data)
             t_start = time.time()
+        elif (data is True and count == 1):
+            continue
+        elif (data is True):
+            print ("Leaving loop")
+            return
 
 parser = argparse.ArgumentParser(description='File transfer client.')
 
@@ -54,18 +63,18 @@ while(True):
             req_file = cmd_list[1]
             with open(req_file, 'rb') as f: #open file with wb
                 data = f.read()
-                print('SERVER: Sending ', str(data))
+                print('SERVER: Sending')
                 c.send(data)
-                print('SERVER: Send')
+                print('SERVER: Sent')
         elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
             req_file = cmd_list[1]
             sent_file = cmd_list[2]
+            threading.Thread(target=recv_file, args=(sent_file, c)).start()
             with open(req_file, 'rb') as f:
                 data = f.read()
-                print('SERVER: Sending ', str(data))
+                print('SERVER: Sending ')
                 c.send(data)
-                print('SERVER: Send')
-            threading.Thread(target=recv_file, args=(sent_file, c))
+                print('SERVER: Sent')
         else:
             print('SERVER: Invalid command.')
             c.send('Invalid command.')

@@ -3,6 +3,7 @@ import argparse
 import rtpsocket
 import time
 import threading
+import os
 
 
 def recv_file(name, connection):
@@ -10,17 +11,15 @@ def recv_file(name, connection):
     t_start = time.time()
     print ("Entering post file")
     name = "post_" + name
-    count = 0
+    if os.path.exists(name):
+        os.remove(name)
     while (time.time() - t_start < TIMEOUT):
         print ("Receive loop entered")
-        count += 1
         data = connection.recv()
         if (data is not None and data is not True):
             with open(name, 'ba') as f:
                 f.write(data)
             t_start = time.time()
-        elif (data is True and count == 1):
-            continue
         elif (data is True):
             print ("Leaving loop")
             return
@@ -47,10 +46,15 @@ while(True):
     cmd = None
 
     while (c.connected):
-        cmd = c.recv()
-        if (cmd is True):
-            cmd = None
-            continue
+        cmd = b''
+
+        while (True):
+            temp = c.recv()
+            if (temp == True):
+                break
+            else:
+                cmd += temp
+
         cmd = cmd.decode()
 
         print('SERVER: ', cmd)

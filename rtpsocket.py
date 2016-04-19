@@ -86,12 +86,12 @@ class Rtpsocket():
 				if pkt_type == 4 and address in self.connections.keys():
 					#not putting entire packet in receive, only the data
 					self.connections[address].rcvBuff.appendleft(pkt_data)
-					
+
 					# when file transfer is complete, put a none in the receive buff to indicate
 					if (lastpacket == 1):
 						print("Last packet received!", lastpacket)
 						self.connections[address].rcvBuff.appendleft(True)
-					
+
 					self.connections[address].ackNum = pkt_seqNum
 					self.connections[address].seqNum += 1
 					# print("Data packet placed in appropriate receive buffer" + ", address: " + str(address))

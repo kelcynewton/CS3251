@@ -3,6 +3,7 @@ import argparse
 import rtpsocket
 import threading
 import time
+import os
 
 
 def recv_file(name, connection):
@@ -10,6 +11,8 @@ def recv_file(name, connection):
     t_start = time.time()
     print ("Entering get file")
     name = "get_" + name
+    if os.path.exists(name):
+        os.remove(name)
     while (time.time() - t_start < TIMEOUT):
         data = connection.recv()
         if (data is not None and data is not True):
@@ -42,14 +45,14 @@ while (command != 'disconnect'):
 
     if (len(cmd_list) == 1 and cmd_list[0] == 'disconnect'):
         continue
-    
+
     elif (len(cmd_list) == 2 and cmd_list[0] == 'get'):
         recv_name = cmd_list[1]
         c.send(' '.join(cmd_list[0:2]))
         print("RECIEVING")
         # threading.Thread(target=recv_file, args=(recv_name, c)).start()
         recv_file(recv_name, c)
-    
+
     elif (len(cmd_list) == 3 and cmd_list[0] == 'get-post'):
         recv_name = cmd_list[1]
         send_name = cmd_list[2]

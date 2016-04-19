@@ -68,13 +68,16 @@ class Connection():
             self.rtpsocket.udpSocket.sendto(packet.packet_to_bytes(data_packet), (self.destIP, self.destPort))
             self.timeout = False
             t = threading.Timer(1, self.timeout_conn)
+            t.start()
             while(not self.timeout and not self.ackReceived): #wait until timeout detected or we get something valid back
                 pass
                 # DO NOTHING
             if (self.timeout): #if we timed out before we got something back, resend the packet
-                self.sndBuff.appendright(data_packet)
+                self.sndBuff.append(data_packet)
                 self.seqNum -= 1
                 continue
+            if(self.ackReceived):
+                t.cancel()
         print("finished sending")
 
     def timeout_conn(self):

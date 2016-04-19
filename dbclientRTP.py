@@ -38,3 +38,5 @@ connection.send(query_str.encode('utf-8'))
 response = connection.recv()
 response_str = response.decode('utf-8')
 print('Server response: {}'.format(response_str))
+
+socket.close()

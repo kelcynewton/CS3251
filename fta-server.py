@@ -87,6 +87,7 @@ while(True):
     while (c is None):
         c = s.accept()
 
+
     t = threading.Thread(target=handle_connection, args=(c,))
     t.setDaemon(True)
     t.start()

@@ -33,6 +33,8 @@ class Connection():
         self.rtpsocket = rtpsocket
         self.timeout = False
         self.ackReceived = False
+        self.expectedSeq = 0
+        self.expectedAck = 0
 
     def recv(self):
         while (len(self.rcvBuff) == 0):
@@ -59,6 +61,7 @@ class Connection():
             self.ackReceived = False
             data = self.sndBuff.pop()
             self.seqNum += 1
+            self.expectedAck = self.seqNum
             if (len(self.sndBuff) == 0):
                 # last packet sets the lastpacket bit to 1
                 data_packet = self.rtpsocket.create_data_packet(self.destIP, self.destPort, data, 1)
@@ -73,7 +76,7 @@ class Connection():
                 pass
                 # DO NOTHING
             if (self.timeout): #if we timed out before we got something back, resend the packet
-                self.sndBuff.append(data_packet)
+                self.sndBuff.append(data)
                 self.seqNum -= 1
                 continue
             if(self.ackReceived):

@@ -76,6 +76,8 @@ class Rtpsocket():
 					self.connections[address].ackNum = pkt_seqNum
 					print(len(self.incomingConnections))
 					print("Waiting to accept connection with: " + str(address))
+					if (len(self.connections) > 0):
+						self.accept()
 
 				# ACK from connection that is closing, add it to the closing connection queue
 				if pkt_type == 2 and self.connections[address].finReceived == True and self.connections[address] not in self.closingConnections:

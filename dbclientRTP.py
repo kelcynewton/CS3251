@@ -28,8 +28,9 @@ query_str = ' '.join(query)
 
 # Create the socket and connect to the server passed in.
 socket = rtpsocket.Rtpsocket()
-socket.listen()
 connection = socket.connect(host, port)
+socket.listen()
+
 
 
 # Try to send the query and receive the response.

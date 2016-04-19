@@ -13,8 +13,8 @@ def recv_file(name, connection):
     name = "post_" + name
     if os.path.exists(name):
         os.remove(name)
+    print ("Receive loop about to be entered")
     while (time.time() - t_start < TIMEOUT):
-        print ("Receive loop entered")
         data = connection.recv()
         if (data is not None and data is not True):
             with open(name, 'ba') as f:

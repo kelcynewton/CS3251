@@ -33,8 +33,9 @@ args = parser.parse_args()
 host, port = args.ip.split(':')
 
 s = rtpsocket.Rtpsocket()
-s.listen()
 c = s.connect(host, int(port))
+s.listen()
+
 
 command = ''
 

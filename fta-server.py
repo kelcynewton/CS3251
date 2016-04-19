@@ -13,7 +13,7 @@ def recv_file(name, connection):
     name = "post_" + name
     if os.path.exists(name):
         os.remove(name)
-    print ("Receive loop about to be entered")
+    print ("Receive about to be entered")
     while (time.time() - t_start < TIMEOUT):
         data = connection.recv()
         if (data is not None and data is not True):
@@ -24,27 +24,8 @@ def recv_file(name, connection):
             print ("Leaving loop")
             return
 
-parser = argparse.ArgumentParser(description='File transfer client.')
-
-parser.add_argument("port", type=int, help="Port number to bind to.")
-parser.add_argument("window", type=int, help="Window size of the server.")
-
-args = parser.parse_args()
-
-s = rtpsocket.Rtpsocket()
-s.bind('', args.port)
-s.listen()
-
-while(True):
-
-    c = None
-    while (c is None):
-        c = s.accept()
-
-    print("SERVER: Connection established.")
-
-    cmd = None
-
+def handle_connection(c):
+    print("handling connection")
     while (c.connected):
         cmd = b''
 
@@ -87,5 +68,31 @@ while(True):
             c.send('Invalid command.')
 
         cmd = None
+
+parser = argparse.ArgumentParser(description='File transfer client.')
+
+parser.add_argument("port", type=int, help="Port number to bind to.")
+parser.add_argument("window", type=int, help="Window size of the server.")
+
+args = parser.parse_args()
+
+s = rtpsocket.Rtpsocket()
+s.bind('', args.port)
+s.listen()
+
+threads = []
+
+while(True):
+    c = None
+    while (c is None):
+        c = s.accept()
+
+    t = threading.Thread(target=handle_connection, args=(c,))
+    t.setDaemon(True)
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
 
 s.close()

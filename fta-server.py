@@ -63,7 +63,10 @@ while(True):
 
         print('SERVER: ', cmd_list)
 
-        if (len(cmd_list) == 2 and cmd_list[0] == 'get'):
+        if (len(cmd_list) == 1 and cmd_list[0] == 'disconnect'):
+            c.close()
+            break
+        elif (len(cmd_list) == 2 and cmd_list[0] == 'get'):
             req_file = cmd_list[1]
             with open(req_file, 'rb') as f: #open file with wb
                 data = f.read()

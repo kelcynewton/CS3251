@@ -44,6 +44,7 @@ while (command != 'disconnect'):
     cmd_list = command.split(' ')
 
     if (len(cmd_list) == 1 and cmd_list[0] == 'disconnect'):
+        c.send(cmd_list[0])
         continue
 
     elif (len(cmd_list) == 2 and cmd_list[0] == 'get'):
@@ -75,5 +76,4 @@ while (command != 'disconnect'):
 
 
 print('Disconnecting')
-c.close()
 s.close()

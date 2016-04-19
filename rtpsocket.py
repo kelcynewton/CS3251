@@ -205,7 +205,7 @@ class Rtpsocket():
 
 
 	def close(self):
-		for connect in self.connections.values():
+		for connect in list(self.connections.values()):
 			self.closingConnections.appendleft(connect)
 			connect.seqNum += 1
 			fin = self.create_fin_packet(connect.destIP, connect.destPort)

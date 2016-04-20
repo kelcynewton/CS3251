@@ -54,6 +54,11 @@ class Rtpsocket():
 					print("expectedAck :", self.connections[(dest_IP, dest_port)].expectedAck)
 				print("received type : " + str(pkt_type))
 
+				# Drop out-of-order and corrupted packets
+				# or pkt_checksum != packet.calculate_checksum(arrived.head + arrived.contents))
+				if (pkt_type != 1 and pkt_seqNum != self.connections[address].expectedSeq):
+					continue
+
 				# IP address & port that hasn't been seen is trying to SYN, need to send synack & create new connection object
 				if pkt_type == 1 and address not in self.connections.keys():
 					print("SYN received!")
@@ -91,22 +96,21 @@ class Rtpsocket():
 				# listening for data packets to automatically place them in the correct receive buffer, ALSO RESPOND WITH AN ACK
 				if pkt_type == 4 and address in self.connections.keys():
 					#not putting entire packet in receive, only the data
-					if pkt_seqNum == self.connections[address].expectedSeq:
-						self.connections[address].rcvBuff.appendleft(pkt_data)
-						self.connections[address].expectedSeq += 1
+					self.connections[address].rcvBuff.appendleft(pkt_data)
+					self.connections[address].expectedSeq += 1
 
-						# when file transfer is complete, put a True in the receive buff to indicate
-						if (lastpacket == 1):
-							print("Last packet received!", lastpacket)
-							self.connections[address].rcvBuff.appendleft(True)
+					# when file transfer is complete, put a True in the receive buff to indicate
+					if (lastpacket == 1):
+						print("Last packet received!", lastpacket)
+						self.connections[address].rcvBuff.appendleft(True)
 
-						self.connections[address].ackNum = pkt_seqNum
-						self.connections[address].seqNum += 1
-						# print("Data packet placed in appropriate receive buffer" + ", address: " + str(address))
-						data_ack_packet = self.create_ack(dest_IP, dest_port)
-						# print("Sending Data ack")
-						# print("Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum))
-						self.udpSocket.sendto(packet.packet_to_bytes(data_ack_packet), (dest_IP, dest_port))
+					self.connections[address].ackNum = pkt_seqNum
+					self.connections[address].seqNum += 1
+					# print("Data packet placed in appropriate receive buffer" + ", address: " + str(address))
+					data_ack_packet = self.create_ack(dest_IP, dest_port)
+					# print("Sending Data ack")
+					# print("Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum))
+					self.udpSocket.sendto(packet.packet_to_bytes(data_ack_packet), (dest_IP, dest_port))
 
 				# connection wants to close, send a finack in response, wait for the final ack
 				if pkt_type == 8 and address in self.connections.keys():

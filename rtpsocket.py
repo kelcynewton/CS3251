@@ -62,6 +62,9 @@ class Rtpsocket():
 				if (pkt_type != 1 and pkt_seqNum != self.connections[address].expectedSeq):
 					continue
 
+				if (pkt_type == 2 and pkt_ackNum != self.connections[address].expectedAck):
+					continue
+
 				# IP address & port that hasn't been seen is trying to SYN, need to send synack & create new connection object
 				if pkt_type == 1 and address not in self.connections.keys():
 					print("SYN received!")

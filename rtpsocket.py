@@ -124,7 +124,8 @@ class Rtpsocket():
 					# print("Sending Data ack")
 					# print("Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum))
 					# self.udpSocket.sendto(packet.packet_to_bytes(data_ack_packet), (dest_IP, dest_port))
-					self.threaded_send(data_ack_packet, (dest_IP, dest_port))
+					# self.threaded_send(data_ack_packet, (dest_IP, dest_port))
+					self.send_no_timeout(data_ack_packet, (dest_IP, dest_port))
 
 				# connection wants to close, send a finack in response, wait for the final ack
 				if pkt_type == 8 and address in self.connections.keys():
@@ -138,7 +139,7 @@ class Rtpsocket():
 
 					finack = self.create_finack_packet(dest_IP, dest_port)
 					# self.udpSocket.sendto(packet.packet_to_bytes(finack), address) #send finack to the connection
-					self.threaded_send(finack, (dest_IP, dest_port))
+					# self.threaded_send(finack, (dest_IP, dest_port))
 					# print("Sending finack")
 					# print("Seqnum: " + str(self.connections[(dest_IP, dest_port)].seqNum))
 
@@ -150,7 +151,8 @@ class Rtpsocket():
 					# self.connections[address].seqNum += 1
 					ack_packet = self.create_ack(dest_IP, dest_port) #ack the finack so we can close
 					# self.udpSocket.sendto(packet.packet_to_bytes(ack_packet), (dest_IP, dest_port))
-					self.threaded_send(ack_packet, (dest_IP, dest_port))
+					# self.threaded_send(ack_packet, (dest_IP, dest_port))
+					self.send_no_timeout(ack_packet, (dest_IP, dest_port))
 					# print("sending final ACK, going to close connection")
 					# print("Seqnum: " + str(self.connections[address].seqNum))
 
@@ -221,7 +223,8 @@ class Rtpsocket():
 			ack_packet = self.create_ack(host, port)
 			self.connections[address].expectedSeq += 1
 			# self.udpSocket.sendto(packet.packet_to_bytes(ack_packet), (host, port))
-			self.threaded_send(ack_packet, (host, port))
+			# self.threaded_send(ack_packet, (host, port))
+			self.send_no_timeout(ack_packet, (host, port))
 			self.connections[(host, port)].connected = True
 			return self.connections[(host, port)]
 
@@ -290,11 +293,16 @@ class Rtpsocket():
 		finack = packet.create_packet(self.port, port, self.connections[(host, port)].seqNum, self.connections[(host, port)].ackNum, 10, self.connections[(host,port)].window_size, b'0')
 		return finack
 
+	def send_no_timeout(self, send_packet, address):
+		connection = self.connections[address]
+		connection.seqNum += 1
+		self.udpSocket.sendto(packet.packet_to_bytes(send_packet), address)
+
 	def send_timeout(self, send_packet, address, fin):
 		connection = self.connections[address]
 		connection.seqNum += 1
 		while (True):
-			self.udpSocket.sendto(packet.packet_to_bytes(send_packet), (connection.destIP, connection.destPort))
+			self.udpSocket.sendto(packet.packet_to_bytes(send_packet), address)
 			connection.timeout = False
 			t = threading.Timer(MAX_TIMEOUT, connection.timeout_conn)
 			t.start()

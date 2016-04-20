@@ -57,12 +57,31 @@ class Rtpsocket():
 					print("expectedAck :", self.connections[(dest_IP, dest_port)].expectedAck)
 				print("received type : " + str(pkt_type))
 
+				if (pkt_type == 1):
+					print('SYN')
+				elif (pkt_type == 2):
+					print('ACK')
+				elif (pkt_type == 3):
+					print('SYNACK')
+				elif (pkt_type == 4):
+					print('DATA')
+				elif (pkt_type == 8):
+					print('FIN')
+				elif (pkt_type == 10):
+					print('FINACK')
+
 				# Drop out-of-order and corrupted packets
 				# or pkt_checksum != packet.calculate_checksum(arrived.head + arrived.contents))
-				if (pkt_type != 1 and pkt_seqNum != self.connections[address].expectedSeq):
+				if (pkt_type != 1 and pkt_type != 2 and pkt_seqNum != self.connections[address].expectedSeq):
+					print("Out of Order")
+					if (pkt_type == 4 and pkt_seqNum < self.connections[address].seqNum):
+						print("LESS THAN")
+						ack_packet = packet.create_packet(self.port, dest_port, self.connections[(dest_IP, dest_port)].seqNum - 1, pkt_seqNum, 2, self.connections[(dest_IP, dest_port)].window_size, b'0')
+						self.udpSocket.sendto(packet.packet_to_bytes(ack_packet), (dest_IP, dest_port))
 					continue
 
 				if (pkt_type == 2 and pkt_ackNum != self.connections[address].expectedAck):
+					print("ACK OOO")
 					continue
 
 				# IP address & port that hasn't been seen is trying to SYN, need to send synack & create new connection object
@@ -324,3 +343,4 @@ class Rtpsocket():
 		t = threading.Thread(target=self.send_timeout, args=(send_packet, address, fin))
 		t.setDaemon(True)
 		t.start()
+		return t

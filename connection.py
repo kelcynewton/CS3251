@@ -22,7 +22,6 @@ class Connection():
         self.src = sourcePort
         self.destPort = destPort
         self.destIP = destIP
-        self.window_size = 1
         self.seqNum = seqNum
         self.ackNum = ackNum
         self.data = data
@@ -35,6 +34,7 @@ class Connection():
         self.ackReceived = False
         self.expectedSeq = 0
         self.expectedAck = 0
+        self.window_size = self.rtpsocket.window
 
     def recv(self):
         while (len(self.rcvBuff) == 0):
@@ -92,4 +92,3 @@ class Connection():
             self.rtpsocket.closingConnections.pop()
             print("closingConnections len after pop: " + str(len(self.rtpsocket.closingConnections)))
             self.rtpsocket.clearConnection(self)
-#later add in dynamic receiver window, for now window is 1 packet

@@ -76,7 +76,7 @@ parser.add_argument("window", type=int, help="Window size of the server.")
 
 args = parser.parse_args()
 
-s = rtpsocket.Rtpsocket()
+s = rtpsocket.Rtpsocket(args.window)
 s.bind('', args.port)
 s.listen()
 

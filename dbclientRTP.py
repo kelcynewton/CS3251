@@ -27,7 +27,7 @@ query_str = ' '.join(query)
 
 
 # Create the socket and connect to the server passed in.
-socket = rtpsocket.Rtpsocket()
+socket = rtpsocket.Rtpsocket(1)
 connection = socket.connect(host, port)
 socket.listen()
 

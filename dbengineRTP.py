@@ -15,7 +15,7 @@ parser.add_argument("port", type=int, help="Port number")
 args = parser.parse_args()
 
 # Create TCP socket and bind to the passed port.
-socket = rtpsocket.Rtpsocket()
+socket = rtpsocket.Rtpsocket(1)
 print("Server started")
 
 socket.bind('', args.port)

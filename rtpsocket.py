@@ -18,7 +18,7 @@ import time
 # FINACK = 10
 
 class Rtpsocket():
-	def __init__(self):
+	def __init__(self, window):
 		self.incomingConnections = deque() # queue of connections waiting to be accepted, SERVER ONLY
 		self.closingConnections = deque() # queue of connections waiting to be closed, SERVER ONLY
 		self.connections = {} # maps (IP addresses, port) tuple to connection objects
@@ -26,6 +26,7 @@ class Rtpsocket():
 		self.timeout = self.udpSocket.settimeout(10)	# SET TIMEOUT
 		self.host = '127.0.0.1' #local host
 		self.port = random.randint(1000, 9000) #random port number between 1000 - 9000
+		self.window = window
 
 	def listen(self):
 		listening = threading.Thread(target=self.listenThread)
@@ -34,7 +35,6 @@ class Rtpsocket():
 
 	def listenThread(self):
 		while (True):
-			# time.sleep(.05)
 			try:
 				data, address = self.udpSocket.recvfrom(1024)
 			except socket.timeout:
@@ -64,9 +64,16 @@ class Rtpsocket():
 					print("SYN received!")
 					newConnection = connection.Connection(self.port, dest_port, dest_IP, 0, pkt_seqNum, "nothing", self) #new connection with client that sent SYN
 					print(newConnection)
+					
 					if isinstance(newConnection, connection.Connection):
 						# print("Adding new connection to the table")
 						self.connections[(newConnection.destIP, newConnection.destPort)] = newConnection
+					
+					if (self.window > pkt_window):
+						print ("Changing window size from", self.window, "to", pkt_window)
+						self.window = pkt_window
+						self.connections[(newConnection.destIP, newConnection.destPort)].window_size = pkt_window
+					
 					synack = self.create_synack(dest_IP, dest_port)
 					print("Sending SYNACK....")
 					newConnection.expectedSeq += 1
@@ -195,6 +202,12 @@ class Rtpsocket():
 			self.connections[(host, port)].seqNum += 1
 			print("Sending ACK....")
 			# print("Seqnum: " + str(self.connections[(host, port)].seqNum))
+
+			if (self.window > pkt_window):
+				print ("Changing window size from", self.window, "to", pkt_window)
+				self.window = pkt_window
+				self.connections[address].window_size = pkt_window
+
 			ack_packet = self.create_ack(host, port)
 			self.connections[address].expectedSeq += 1
 			self.udpSocket.sendto(packet.packet_to_bytes(ack_packet), (host, port))
